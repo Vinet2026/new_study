@@ -1,13 +1,29 @@
-const STATE_KEY = 'childGame_v3_state';
+const STATE_KEY = 'childGame_v6_state';
+
+function createProfileData() {
+  return {
+    starsEasy: 0,
+    starsHard: 0,
+    materials: 4, // 初始送 4 個建材讓小孩立刻能體驗蓋第一棟建築
+    unlockedStickers: ['s1'],
+    currentNode: 1,
+    conqueredNodes: {}, // { 'subject_nodeId': true }
+    nodeTowers: {},     // { 'subject_nodeId': 1 | 2 | 3 }
+    basePlots: [null, null, null, null, null, null] // 6 塊自由設計基地空地 { type, level }
+  };
+}
 
 export function createDefaultState() {
   return {
     activeProfile: '4y',
+    activeTab: 'map', // 'map' | 'base'
+    activeSubject: { '4y': 'k_lang', '6y': 'chinese' },
     selectedGrade: { '4y': 'ALL', '6y': 'ALL' },
+    difficulty: 'easy', // 'easy' | 'hard'
     prefs: { listenFirst: false, debounce: true, voiceRate: 1.0 },
     profiles: {
-      '4y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'], conquered: {} },
-      '6y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'], conquered: {} }
+      '4y': createProfileData(),
+      '6y': createProfileData()
     },
     wrongPool: { '4y': {}, '6y': {} },
     customQuestions: [],
@@ -24,11 +40,12 @@ export function loadAppState() {
     return {
       ...def,
       ...parsed,
+      activeSubject: { ...def.activeSubject, ...(parsed.activeSubject || {}) },
       selectedGrade: { ...def.selectedGrade, ...(parsed.selectedGrade || {}) },
       prefs: { ...def.prefs, ...(parsed.prefs || {}) },
       profiles: {
-        '4y': { ...def.profiles['4y'], ...(parsed.profiles?.['4y'] || {}) },
-        '6y': { ...def.profiles['6y'], ...(parsed.profiles?.['6y'] || {}) }
+        '4y': { ...createProfileData(), ...(parsed.profiles?.['4y'] || {}) },
+        '6y': { ...createProfileData(), ...(parsed.profiles?.['6y'] || {}) }
       }
     };
   } catch {

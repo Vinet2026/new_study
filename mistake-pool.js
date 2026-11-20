@@ -1,6 +1,6 @@
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-export function buildExpeditionDeck(allQuestions, wrongPoolByProfile, category = 'all', grade = 'ALL', count = 6) {
+export function buildExpeditionDeck(allQuestions, wrongPoolByProfile, category = 'all', grade = 'ALL', count = 5) {
   let filtered = allQuestions;
   if (category !== 'all') {
     const byCat = filtered.filter(q => q.category === category);

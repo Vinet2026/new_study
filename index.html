@@ -4,10 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#10b981" />
-  <title>雙寶學習王國｜小恐龍號 ＆ 太空人號</title>
+  <title>雙寶學習王國｜島嶼冒險 ＆ 專屬基地</title>
   <link rel="stylesheet" href="./styles.css" />
+  <script>
+    // 獨立於主程式的錯誤攔截器：若任何模組載入失敗，立刻顯示明確提示
+    window.addEventListener('error', function (e) {
+      var b = document.getElementById('boot-error-banner');
+      if (b) {
+        b.style.display = 'block';
+        b.textContent = '⚠️ 網頁載入發生異常：' + (e.message || '請確認所有檔案皆已上傳至同一資料夾');
+      }
+    });
+  </script>
 </head>
 <body>
+
+<div id="boot-error-banner" class="boot-error-banner"></div>
 
 <header>
   <div class="brand" onclick="goHome()">
@@ -15,93 +27,105 @@
     <span>雙寶學習王國</span>
   </div>
   <div class="header-actions">
-    <div class="pill" id="header-stats">🦖 小恐龍 🌱0 🔥0 | 🚀 太空人 🌱0 🔥0</div>
     <div class="pill" id="header-timer">⏱️ 護眼：未啟動</div>
     <button class="btn btn-ghost btn-sm" onclick="openStickerModal()">📒 貼紙簿</button>
-    <button class="btn btn-ghost btn-sm" onclick="openVoiceModal()">🎙️ 語音／錄音</button>
+    <button class="btn btn-ghost btn-sm" onclick="openVoiceModal()">🎙️ 錄音</button>
     <button class="btn btn-ghost btn-sm" onclick="openParentLockModal()">🛠️ 家長設定</button>
   </div>
 </header>
 
 <div class="container">
   <div class="soft-banner" id="soft-landing-banner">
-    ⏰ 護眼時間快到囉！完成這一關領完貼紙後，我們就讓眼睛休息一下喔！
+    ⏰ 護眼時間快到囉！打完這一關領完材料後，我們就讓眼睛休息一下喔！
   </div>
 
   <!-- 首頁視圖 -->
   <section id="view-home">
-    <!-- 1. 雙寶角色帳號選擇 -->
-    <div class="card">
-      <div style="margin-bottom:12px;">
-        <h1 style="margin:0 0 4px;">選擇小主人帳號登入闖關！</h1>
-        <p class="muted" style="margin:0;">
-          🦖 小恐龍號（幼兒園 中班～大班）｜🚀 太空人號（國小 108 課綱 小一～小六）｜全站自動附台灣直式注音＋同步語音朗讀
-        </p>
-      </div>
-
-      <div class="hero-grid">
-        <div class="profile-card dino" id="card-4y" onclick="selectProfile('4y')">
-          <div class="row" style="justify-content:space-between;">
-            <strong style="font-size:1.25rem;">🦖 小恐龍號（幼兒園）</strong>
-            <span class="pill" id="badge-4y">🌱0 🔥0</span>
-          </div>
-          <p class="muted" style="margin:8px 0 12px;">雙語＆STEAM 幼兒園（中班 K2 ～ 大班 K3）</p>
-          <button class="btn btn-primary" style="width:100%;" onclick="event.stopPropagation(); startDailyExpedition('4y')">
-            ⚡ 今日一鍵出征
-          </button>
-        </div>
-
-        <div class="profile-card astro" id="card-6y" onclick="selectProfile('6y')">
-          <div class="row" style="justify-content:space-between;">
-            <strong style="font-size:1.25rem;">🚀 太空人號（國小 108 課綱）</strong>
-            <span class="pill" id="badge-6y">🌱0 🔥0</span>
-          </div>
-          <p class="muted" style="margin:8px 0 12px;">國小 108 課綱（小一 G1 ～ 小六 G6）</p>
-          <button class="btn btn-accent" style="width:100%;" onclick="event.stopPropagation(); startDailyExpedition('6y')">
-            ⚡ 今日一鍵出征
-          </button>
-        </div>
-      </div>
+    <!-- 雙寶帳號切換 -->
+    <div class="profile-bar">
+      <button type="button" class="profile-tab dino" id="card-4y" onclick="selectProfile('4y')">
+        <div style="font-weight:900; font-size:1.05rem;">🦖 小恐龍號</div>
+        <div class="muted" id="badge-4y">🌱0 🔥0 ｜ 🪵0</div>
+      </button>
+      <button type="button" class="profile-tab astro" id="card-6y" onclick="selectProfile('6y')">
+        <div style="font-weight:900; font-size:1.05rem;">🚀 太空人號</div>
+        <div class="muted" id="badge-6y">🌱0 🔥0 ｜ ⚡0</div>
+      </button>
     </div>
 
-    <!-- 2. 學習王國地圖 & 分年級選擇器 -->
-    <div class="card kingdom-map-card">
-      <div class="row" style="justify-content:space-between; align-items:flex-start;">
-        <div>
-          <h2 id="territory-title" style="margin:0 0 4px;">🗺️ 學習王國領土地圖</h2>
-          <span class="muted" id="monster-pool-summary">待收服小怪獸：0 隻</span>
-        </div>
-        <div class="row">
-          <label class="pill" style="cursor:pointer;">
-            <input type="checkbox" id="toggle-listen-first" style="width:auto; margin:0;" onchange="togglePref('listenFirst', this.checked)" />
-            🎧 聽完題目再選答案
-          </label>
-          <label class="pill" style="cursor:pointer;">
-            <input type="checkbox" id="toggle-debounce" style="width:auto; margin:0;" checked onchange="togglePref('debounce', this.checked)" />
-            🛡️ 防誤觸保護
-          </label>
-        </div>
-      </div>
-
-      <!-- 分年級選擇列 -->
-      <div class="grade-bar">
-        <span style="font-weight:800;">🎓 選擇學習年級：</span>
-        <div class="row" id="grade-selector-pills"></div>
-      </div>
-
-      <!-- 彩色王國領土地圖格子 -->
-      <div class="territory-grid" id="kingdom-map-grid"></div>
-    </div>
-
-    <!-- 3. 雙寶協力打 Boss 入口 -->
-    <div class="boss-banner">
+    <!-- 王國稱號與建材狀態列 -->
+    <div class="kingdom-status-bar">
       <div>
-        <div style="font-size:1.3rem; font-weight:800;">⚔️ 雙寶協力打魔王：討伐「蛀牙巨龍」</div>
-        <div style="opacity:0.92; margin-top:4px;">
-          小恐龍與太空人輪流闖關！被冰凍時呼叫隊友救援破冰，連對滿氣還能「雙手同時按住」發動合體大絕招！
-        </div>
+        <div style="font-size:1.1rem; font-weight:900;" id="kingdom-title-display">⛺ 初出茅廬營地</div>
+        <div style="font-size:0.82rem; opacity:0.85;" id="kingdom-lv-display">全島建築總等級：Lv.0（持續蓋塔與擴建基地可晉升稱號！）</div>
       </div>
-      <button class="btn btn-warning" onclick="startCoopBoss()">🔥 開始雙人協力戰</button>
+      <div class="row">
+        <span class="pill" style="background:#fff; color:#0f172a;" id="material-pill">🪵 魔法木頭：4</span>
+        <button class="btn btn-primary btn-sm" onclick="startDailyExpedition()">⚡ 今日一鍵出征</button>
+      </div>
+    </div>
+
+    <!-- 主模式切換：冒險島嶼地圖 vs 我的專屬基地 -->
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab-btn active" id="tab-btn-map" onclick="switchHomeTab('map')">🗺️ 冒險島嶼地圖</button>
+      <button type="button" class="mode-tab-btn" id="tab-btn-base" onclick="switchHomeTab('base')">🏗️ 我的專屬基地</button>
+    </div>
+
+    <!-- 分頁 A：冒險島嶼地圖 -->
+    <div id="panel-map">
+      <div class="card" style="padding:14px;">
+        <!-- 科目選擇 -->
+        <div class="subject-pills" id="subject-pills"></div>
+        <!-- 分年級選擇 -->
+        <div class="grade-pills" id="grade-pills"></div>
+
+        <!-- SVG 島嶼大陸地圖（10 個可自由點擊節點＋移動角色） -->
+        <div class="island-map-wrap" id="island-map-wrap">
+          <svg class="island-bg-svg" viewBox="0 0 800 550" preserveAspectRatio="none">
+            <!-- 海洋波紋 -->
+            <rect width="800" height="550" fill="#38bdf8"/>
+            <path d="M40,90 Q60,80 80,90 M680,490 Q700,480 720,490" stroke="#7dd3fc" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <!-- 翡翠大陸島嶼 -->
+            <path d="M110,480 Q40,380 70,220 Q110,80 390,65 Q680,70 735,230 Q765,390 650,495 Q380,535 110,480 Z"
+                  fill="#d9f99d" stroke="#22c55e" stroke-width="10"/>
+            <!-- 中央藍色小河 -->
+            <path d="M415,75 Q390,220 420,330 Q450,440 410,515" fill="none" stroke="#60a5fa" stroke-width="14" opacity="0.7"/>
+            <!-- 1 -> 10 -> Boss 冒險虛線路徑 -->
+            <polyline points="152,440 328,462 520,451 656,346 472,330 280,319 128,247 248,159 432,176 624,170 400,60"
+                      fill="none" stroke="#f59e0b" stroke-width="5" stroke-dasharray="10 8" opacity="0.85"/>
+          </svg>
+
+          <!-- 頂部大魔王節點 -->
+          <button type="button" class="map-boss-node" id="map-boss-node" onclick="startCoopBoss()">
+            ⚔️ 雙寶協力大魔王
+          </button>
+
+          <!-- 10 個領土節點與移動角色 -->
+          <div class="island-nodes-layer" id="island-nodes-layer"></div>
+          <div class="map-avatar" id="map-avatar">🦖</div>
+        </div>
+
+        <div class="map-footer-bar" id="map-footer-bar">
+          🗺️ 翡翠新手大陸 ｜ 🌈 彩色＝已佔領 ｜ ⬜ 灰階＝未佔領 ｜ 👇 自由點選任一領土，角色就會走過去出戰或蓋塔！
+        </div>
+
+        <!-- 選中領土的出戰與蓋塔卡片 -->
+        <div class="node-action-card" id="node-action-card"></div>
+      </div>
+    </div>
+
+    <!-- 分頁 B：我的專屬基地（6 塊空地自由設計建造與升級） -->
+    <div id="panel-base" class="hidden">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <h2 style="margin:0 0 4px;">🏗️ 我的專屬王國基地</h2>
+            <div class="muted">點擊任一塊空地自由挑選建築！建築升等後外觀會變得越來越精細華麗喔！</div>
+          </div>
+          <span class="pill" id="base-material-pill">🪵 可用材料：4</span>
+        </div>
+        <div class="base-grid" id="base-grid"></div>
+      </div>
     </div>
   </section>
 
@@ -110,22 +134,19 @@
     <div class="quiz-box" id="quiz-box">
       <div class="row" style="justify-content:space-between;">
         <div class="row">
-          <button class="btn btn-ghost btn-sm" onclick="abortQuiz()">← 返回王國地圖</button>
-          <span class="pill" id="quiz-mode-pill">一般闖關</span>
-          <span class="badge-monster hidden" id="quiz-monster-badge">👾 逃跑的小怪獸（答對收服）</span>
+          <button class="btn btn-ghost btn-sm" onclick="abortQuiz()">← 返回地圖</button>
+          <span class="pill" id="quiz-mode-pill">攻打怪獸</span>
         </div>
         <div class="pill" id="quiz-progress-pill">第 1 / 5 題</div>
       </div>
 
-      <div id="boss-hud" class="hidden" style="margin-top:14px; background:#312e81; color:#fff; padding:14px 16px; border-radius:16px;">
+      <div id="boss-hud" class="hidden" style="margin-top:12px; background:#312e81; color:#fff; padding:12px 14px; border-radius:16px;">
         <div class="row" style="justify-content:space-between;">
           <strong id="boss-name-hp">🐉 蛀牙巨龍體力：10 / 10</strong>
           <span id="boss-turn-label">目前回合：🦖 小恐龍</span>
         </div>
-        <div class="hp-bar-wrap">
-          <div class="hp-bar-fill" id="boss-hp-fill" style="width:100%;"></div>
-        </div>
-        <div id="boss-freeze-alert" style="margin-top:8px; color:#fde047; font-weight:700; display:none;"></div>
+        <div class="hp-bar-wrap"><div class="hp-bar-fill" id="boss-hp-fill" style="width:100%;"></div></div>
+        <div id="boss-freeze-alert" style="margin-top:6px; color:#fde047; font-weight:700; display:none;"></div>
       </div>
 
       <div class="question-prompt" onclick="replayCurrentQuestion()">
@@ -135,7 +156,7 @@
 
       <div class="options-grid" id="options-grid"></div>
 
-      <div class="combo-meter">
+      <div class="row" style="margin-top:14px;">
         <span style="font-weight:700;">🔥 連對能量：</span>
         <div id="combo-pips" class="row" style="gap:5px;"></div>
         <span id="feedback-msg" style="margin-left:auto; font-weight:800;"></span>
@@ -155,28 +176,15 @@
   </section>
 </div>
 
-<footer>
-  💡 專為台灣幼兒與國小學童設計：全站國字自動附台灣直式注音（ㄅㄆㄇ）＋ 全程同步語音朗讀
-</footer>
-
-<!-- 全螢幕金星小劇場 -->
-<div class="theater-modal" id="theater-modal">
-  <div style="font-size:1rem; letter-spacing:2px; color:#fde047; font-weight:800;">✨ 金星傳奇動態小劇場 ✨</div>
-  <div class="float-anim" id="theater-emoji">🏆</div>
-  <h2 id="theater-title" style="margin:12px 0 8px; font-size:2rem;"></h2>
-  <p id="theater-story" style="max-width:520px; font-size:1.1rem; line-height:1.7; color:#e2e8f0;"></p>
-  <button class="btn btn-warning" style="margin-top:20px;" onclick="closeTheater()">關閉小劇場</button>
-</div>
-
-<!-- 護眼時間鎖定畫面 -->
-<div class="eyecare-lock" id="eyecare-lock">
-  <div style="font-size:4rem;">👀💤</div>
-  <h2>小恐龍跟太空人眼睛休息時間到囉！</h2>
-  <p style="max-width:460px; color:#cbd5e1; line-height:1.7;">
-    看看遠方綠樹或閉眼休息 10 分鐘，等等再回來繼續冒險！<br/>
-    （如需延長時間，請由爸爸媽媽輸入算數密碼解鎖）
-  </p>
-  <button class="btn btn-ghost" style="margin-top:16px;" onclick="closeEyecareLockToParent()">🛠️ 家長解鎖</button>
+<!-- 基地建造選單 Modal -->
+<div class="modal-backdrop" id="base-build-modal">
+  <div class="modal-panel" style="max-width:520px;">
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0;" id="base-modal-title">🏗️ 選擇要建造的建築</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('base-build-modal')">✕ 關閉</button>
+    </div>
+    <div id="base-modal-body"></div>
+  </div>
 </div>
 
 <!-- 貼紙簿 Modal -->
@@ -186,12 +194,9 @@
       <h2 style="margin:0;">📒 雙寶榮譽貼紙簿</h2>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('sticker-modal')">✕ 關閉</button>
     </div>
-    <p class="muted" style="margin-top:0;">
-      🌱 答對累積簡單星、🔥 連對解鎖金星傳奇貼紙（點擊金色貼紙可看小劇場），🤝 雙人協力打敗魔王解鎖合體金卡！
-    </p>
     <div class="row" style="margin-bottom:10px;">
-      <button class="btn btn-sm btn-primary" id="sticker-tab-4y" onclick="renderStickerModal('4y')">🦖 小恐龍貼紙簿</button>
-      <button class="btn btn-sm btn-ghost" id="sticker-tab-6y" onclick="renderStickerModal('6y')">🚀 太空人貼紙簿</button>
+      <button class="btn btn-sm btn-primary" id="sticker-tab-4y" onclick="renderStickerModal('4y')">🦖 小恐龍</button>
+      <button class="btn btn-sm btn-ghost" id="sticker-tab-6y" onclick="renderStickerModal('6y')">🚀 太空人</button>
       <span class="pill" id="sticker-count-pill">已解鎖 0 / 12 張</span>
     </div>
     <div class="sticker-grid" id="sticker-grid"></div>
@@ -205,33 +210,25 @@
       <h2 style="margin:0;">🎙️ 語音速度 ＆ 爸媽真人誇獎錄音</h2>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('voice-modal')">✕ 關閉</button>
     </div>
-    <p class="muted">
-      孩子聽到爸爸媽媽的真實聲音加油，專注度會翻倍！錄好後闖關時會優先播放你的真人錄音。
-    </p>
-
-    <div class="row" style="margin-bottom:16px;">
-      <div style="flex:1; min-width:200px;">
-        <label><strong>讀題語速調整</strong></label>
+    <div class="row" style="margin-bottom:14px;">
+      <div style="flex:1;">
+        <label><strong>讀題語速</strong></label>
         <select id="voice-rate" onchange="saveVoiceRate(this.value)">
-          <option value="0.8">🐢 慢速（適合幼兒跟著念）</option>
+          <option value="0.8">🐢 慢速（適合幼兒）</option>
           <option value="1.0" selected>🗣️ 正常速度</option>
           <option value="1.15">⚡ 稍快</option>
         </select>
       </div>
-      <div style="align-self:flex-end; margin-bottom:12px;">
-        <button class="btn btn-ghost btn-sm" onclick="testTTS()">🔊 試聽讀題聲音</button>
-      </div>
+      <button class="btn btn-ghost btn-sm" onclick="testTTS()">🔊 試聽</button>
     </div>
-
     <div id="recorder-list"></div>
   </div>
 </div>
 
 <!-- 家長算數鎖 Modal -->
 <div class="modal-backdrop" id="parent-lock-modal">
-  <div class="modal-panel" style="max-width:420px; text-align:center;">
+  <div class="modal-panel" style="max-width:400px; text-align:center;">
     <h2 style="margin-top:0;">🔐 家長驗證鎖</h2>
-    <p class="muted">請計算下方算式以進入家長設定：</p>
     <div id="math-challenge-question" style="font-size:2rem; font-weight:900; margin:14px 0; color:var(--accent);"></div>
     <input type="number" id="math-challenge-input" placeholder="請輸入答案..." onkeydown="if(event.key==='Enter') verifyMathChallenge()" />
     <div class="row" style="justify-content:center;">
@@ -241,7 +238,7 @@
   </div>
 </div>
 
-<!-- 家長後台 Modal -->
+<!-- 家長設定中心 Modal -->
 <div class="modal-backdrop" id="parent-admin-modal">
   <div class="modal-panel">
     <div class="row" style="justify-content:space-between; margin-bottom:12px;">
@@ -249,126 +246,86 @@
       <button class="btn btn-ghost btn-sm" onclick="closeModal('parent-admin-modal')">✕ 關閉</button>
     </div>
 
-    <div class="card" style="padding:14px; margin-bottom:14px;">
-      <h3 style="margin:0 0 8px;">⏱️ 1. 護眼休息時間（時間到會等孩子完成該關卡才鎖定）</h3>
+    <div class="card" style="padding:12px; margin-bottom:12px;">
+      <h3 style="margin:0 0 8px;">⏱️ 1. 護眼休息時間（完成本關後才鎖定）</h3>
       <div class="row">
-        <button class="btn btn-sm btn-primary" onclick="startEyecareTimer(15)">設定 15 分鐘</button>
-        <button class="btn btn-sm btn-primary" onclick="startEyecareTimer(20)">設定 20 分鐘</button>
-        <button class="btn btn-sm btn-primary" onclick="startEyecareTimer(30)">設定 30 分鐘</button>
+        <button class="btn btn-sm btn-primary" onclick="startEyecareTimer(15)">15 分鐘</button>
+        <button class="btn btn-sm btn-primary" onclick="startEyecareTimer(20)">20 分鐘</button>
+        <button class="btn btn-sm btn-primary" onclick="startEyecareTimer(30)">30 分鐘</button>
         <button class="btn btn-sm btn-danger" onclick="stopEyecareTimer()">解除計時</button>
       </div>
     </div>
 
-    <div class="card" style="padding:14px; margin-bottom:14px;">
-      <h3 style="margin:0 0 6px;">✍️ 2. 新增爸媽自訂題目（輸入國字自動標直式注音）</h3>
-      <p class="muted" style="margin:0 0 10px;">遇到破音字可在國字後方加上括號標注，例如：<code>行(ㄏㄤˊ)業</code></p>
+    <div class="card" style="padding:12px; margin-bottom:12px;">
+      <h3 style="margin:0 0 6px;">✍️ 2. 新增爸媽自訂題目（自動標直式注音，破音字可用 <code>字(ㄓˋ)</code>）</h3>
       <div class="row">
-        <div style="flex:1; min-width:140px;">
-          <label>適用帳號</label>
+        <div style="flex:1;"><label>帳號</label>
           <select id="custom-profile" onchange="updateCustomCategoryOptions()">
-            <option value="4y">🦖 小恐龍號（幼兒園）</option>
-            <option value="6y">🚀 太空人號（國小 108 課綱）</option>
+            <option value="4y">🦖 小恐龍號</option><option value="6y">🚀 太空人號</option>
           </select>
         </div>
-        <div style="flex:1; min-width:140px;">
-          <label>適用年級</label>
-          <select id="custom-grade"></select>
-        </div>
-        <div style="flex:1; min-width:160px;">
-          <label>王國領土分類</label>
-          <select id="custom-category"></select>
-        </div>
+        <div style="flex:1;"><label>年級</label><select id="custom-grade"></select></div>
+        <div style="flex:1;"><label>科目</label><select id="custom-category"></select></div>
       </div>
-
-      <label>題目內容</label>
-      <input type="text" id="custom-q-text" placeholder="例如：哪一種水果是黃色的？" oninput="updateCustomPreview()" />
-
-      <div style="background:#f8fafc; padding:10px 14px; border-radius:12px; margin-bottom:12px;">
-        <span class="muted">畫面實際顯示預覽：</span>
-        <div id="custom-q-preview" class="zhuyin-text" style="font-size:1.35rem; font-weight:700; margin-top:4px;"></div>
+      <input type="text" id="custom-q-text" placeholder="輸入題目..." oninput="updateCustomPreview()" />
+      <div style="background:#f8fafc; padding:8px 12px; border-radius:10px; margin-bottom:10px;">
+        <span class="muted">預覽：</span><div id="custom-q-preview" class="zhuyin-text" style="font-size:1.25rem; font-weight:700;"></div>
       </div>
-
       <div class="row">
-        <div style="flex:1; min-width:150px;">
-          <label>選項 1</label>
-          <input type="text" id="custom-opt-0" placeholder="選項 1" />
-        </div>
-        <div style="flex:1; min-width:150px;">
-          <label>選項 2</label>
-          <input type="text" id="custom-opt-1" placeholder="選項 2" />
-        </div>
-        <div style="flex:1; min-width:150px;">
-          <label>選項 3</label>
-          <input type="text" id="custom-opt-2" placeholder="選項 3" />
-        </div>
+        <div style="flex:1;"><input type="text" id="custom-opt-0" placeholder="選項 1" /></div>
+        <div style="flex:1;"><input type="text" id="custom-opt-1" placeholder="選項 2" /></div>
+        <div style="flex:1;"><input type="text" id="custom-opt-2" placeholder="選項 3" /></div>
       </div>
-
-      <label>正確答案是哪一個？</label>
-      <select id="custom-ans-idx">
-        <option value="0">選項 1</option>
-        <option value="1">選項 2</option>
-        <option value="2">選項 3</option>
-      </select>
-
-      <button class="btn btn-primary" onclick="addCustomQuestion()">＋ 加入題庫</button>
-      <span class="muted" id="custom-count-label" style="margin-left:10px;">目前自訂題數：0 題</span>
-    </div>
-
-    <div class="card" style="padding:14px; margin-bottom:14px;">
-      <h3 style="margin:0 0 6px;">📦 3. 批次匯入／備份自訂題庫</h3>
-      <p class="muted" style="margin:0 0 8px;">可將自訂題目匯出備份，或一次貼上多題題庫資料匯入：</p>
-      <textarea id="json-bank-io" rows="3" placeholder="貼上題庫備份資料，或點下方按鈕匯出目前題庫..."></textarea>
       <div class="row">
-        <button class="btn btn-accent btn-sm" onclick="importCustomJSON()">📥 匯入題庫</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportCustomJSON()">📤 匯出備份</button>
+        <select id="custom-ans-idx" style="width:auto; margin:0;"><option value="0">正解：選項1</option><option value="1">正解：選項2</option><option value="2">正解：選項3</option></select>
+        <button class="btn btn-primary btn-sm" onclick="addCustomQuestion()">＋ 加入題庫</button>
+        <span class="muted" id="custom-count-label">目前自訂：0 題</span>
       </div>
     </div>
 
-    <div class="card" style="padding:14px; margin-bottom:14px;">
-      <h3 style="margin:0 0 6px;">📲 4. 跨裝置進度轉移（手機 ⇄ 平板）</h3>
-      <p class="muted" style="margin:0 0 8px;">產生專屬轉移碼後複製到另一台裝置貼上，即可同步雙寶的星星、貼紙與自訂題庫：</p>
-      <textarea id="transfer-code-box" rows="2" placeholder="點「產生轉移碼」取得代碼，或貼上代碼後點「還原進度」"></textarea>
+    <div class="card" style="padding:12px; margin-bottom:12px;">
+      <h3 style="margin:0 0 6px;">📲 3. 跨裝置進度轉移</h3>
+      <textarea id="transfer-code-box" rows="2" placeholder="產生轉移碼複製到另一台裝置，或貼上代碼還原"></textarea>
       <div class="row">
         <button class="btn btn-purple btn-sm" onclick="generateTransferCode()">🔐 產生轉移碼</button>
         <button class="btn btn-warning btn-sm" onclick="applyTransferCode()">📲 還原進度</button>
       </div>
     </div>
 
-    <!-- 把系統自我檢測收進家長設定最下方 -->
-    <div class="card" style="padding:14px; margin-bottom:0; background:#f8fafc;">
+    <div class="card" style="padding:12px; margin-bottom:0; background:#f8fafc;">
       <div class="row" style="justify-content:space-between;">
-        <div>
-          <h3 style="margin:0 0 4px;">🩺 5. 網站畫面與按鈕檢測</h3>
-          <span class="muted" id="parent-health-summary">檢查畫面按鈕、領土地圖、注音與語音是否正常</span>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="openDiagModal()">🔍 開啟檢測報告</button>
+        <div><strong>🩺 4. 網站按鈕與地圖檢測</strong><div class="muted" id="parent-health-summary">點右側開啟檢測</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openDiagModal()">🔍 開啟檢測</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 網頁端按鈕＆圖形自我檢測 Modal（僅家長後台可開啟） -->
+<!-- 檢測報告 Modal -->
 <div class="modal-backdrop" id="diag-modal">
   <div class="modal-panel">
-    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-      <div>
-        <h2 style="margin:0;">🩺 網站功能與畫面檢測報告</h2>
-        <div class="muted">檢查所有按鈕點擊、領土地圖顯示、注音排版與語音功能</div>
-      </div>
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0;">🩺 網站功能與畫面檢測報告</h2>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('diag-modal')">✕ 關閉</button>
     </div>
-
-    <div class="row" style="margin-bottom:10px;">
-      <button class="btn btn-primary btn-sm" onclick="runFullVisualDiagnosis()">▶ 重新掃描</button>
-      <button class="btn btn-ghost btn-sm" onclick="filterDiagItems('all')">全部項目</button>
-      <button class="btn btn-ghost btn-sm" onclick="filterDiagItems('fail')">只看異常</button>
-      <button class="btn btn-ghost btn-sm" onclick="filterDiagItems('button')">按鈕檢查</button>
-      <button class="btn btn-ghost btn-sm" onclick="filterDiagItems('visual')">圖形與注音</button>
-    </div>
-
-    <div class="diag-summary-grid" id="diag-summary-grid"></div>
-    <div class="diag-list" id="diag-list"></div>
+    <div id="diag-list"></div>
   </div>
+</div>
+
+<!-- 小劇場與護眼鎖 -->
+<div class="theater-modal" id="theater-modal">
+  <div style="color:#fde047; font-weight:800;">✨ 金星傳奇動態小劇場 ✨</div>
+  <div style="font-size:4.5rem; margin:12px 0;" id="theater-emoji">🏆</div>
+  <h2 id="theater-title" style="margin:6px 0;"></h2>
+  <p id="theater-story" style="max-width:480px; color:#e2e8f0;"></p>
+  <button class="btn btn-warning" onclick="closeTheater()">關閉</button>
+</div>
+
+<div class="eyecare-lock" id="eyecare-lock">
+  <div style="font-size:4rem;">👀💤</div>
+  <h2>眼睛休息時間到囉！</h2>
+  <p style="color:#cbd5e1;">看遠方綠樹休息 10 分鐘，等等再繼續冒險！</p>
+  <button class="btn btn-ghost" onclick="closeEyecareLockToParent()">🛠️ 家長解鎖</button>
 </div>
 
 <div class="toast" id="toast"></div>

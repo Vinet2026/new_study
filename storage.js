@@ -1,0 +1,95 @@
+const STATE_KEY = 'childGame_v2_state';
+
+export function createDefaultState() {
+  return {
+    activeProfile: '4y',
+    prefs: { listenFirst: false, debounce: true, voiceRate: 1.0 },
+    profiles: {
+      '4y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'] },
+      '6y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'] }
+    },
+    wrongPool: { '4y': {}, '6y': {} },
+    customQuestions: [],
+    eyecare: { endAt: null }
+  };
+}
+
+export function loadAppState() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (!raw) return createDefaultState();
+    const parsed = JSON.parse(raw);
+    const def = createDefaultState();
+    return { ...def, ...parsed, prefs: { ...def.prefs, ...(parsed.prefs || {}) } };
+  } catch {
+    return createDefaultState();
+  }
+}
+
+export function saveAppState(state) {
+  localStorage.setItem(STATE_KEY, JSON.stringify(state));
+}
+
+export class VoiceDB {
+  constructor() {
+    this.dbName = 'ChildGameAudioDB_v2';
+    this.storeName = 'parentVoices';
+  }
+  _open() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.dbName, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async save(key, blob) {
+    const db = await this._open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).put(blob, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async get(key) {
+    const db = await this._open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readonly');
+      const req = tx.objectStore(this.storeName).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async remove(key) {
+    const db = await this._open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).delete(key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+}
+
+export const TransferCode = {
+  async encode(obj) {
+    const stream = new Blob([JSON.stringify(obj)]).stream().pipeThrough(new CompressionStream('gzip'));
+    const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+    return 'V2_' + btoa(bin);
+  },
+  async decode(code) {
+    const trimmed = (code || '').trim();
+    if (!trimmed.startsWith('V2_')) throw new Error('引繼碼需以 V2_ 開頭');
+    const bin = atob(trimmed.slice(3));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(stream).text());
+  }
+};

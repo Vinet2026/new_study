@@ -21,16 +21,25 @@ export function getKingdomTitle(totalLevel) {
 
 // 10 個島嶼領土節點（百分比座標，供 SVG 地圖與角色移動使用）
 export const ISLAND_NODES = [
-  { id: 1,  x: 19, y: 80, zone: '翠綠新手村',   monster: '迷糊史萊姆', emoji: '👾' },
-  { id: 2,  x: 41, y: 84, zone: '微風小溪畔',   monster: '愛睡章魚怪', emoji: '🐙' },
-  { id: 3,  x: 65, y: 82, zone: '橡果森林區',   monster: '頑皮松鼠精', emoji: '🐿️' },
-  { id: 4,  x: 82, y: 63, zone: '陽光麥田原',   monster: '稻草小精靈', emoji: '🌾' },
-  { id: 5,  x: 59, y: 60, zone: '迷霧古橋頭',   monster: '石頭小傀儡', emoji: '🗿' },
-  { id: 6,  x: 35, y: 58, zone: '靜謐月光谷',   monster: '灰狼小隊長', emoji: '🐺' },
-  { id: 7,  x: 16, y: 45, zone: '蜘蛛絲秘境',   monster: '織網小蜘蛛', emoji: '🕷️' },
-  { id: 8,  x: 31, y: 29, zone: '白骨化石坡',   monster: '搞笑骷髏兵', emoji: '💀' },
-  { id: 9,  x: 54, y: 32, zone: '恐龍腳印谷',   monster: '暴躁小暴龍', emoji: '🦖' },
-  { id: 10, x: 78, y: 31, zone: '翡翠飛龍崖',   monster: '閃電小青龍', emoji: '🐉' }
+  { id: 1,  x: 19, y: 80, zone: '翠綠新手村', shortZone: '新手村', monster: '迷糊史萊姆', emoji: '👾' },
+  { id: 2,  x: 41, y: 84, zone: '微風小溪畔', shortZone: '小溪畔', monster: '愛睡章魚怪', emoji: '🐙' },
+  { id: 3,  x: 65, y: 82, zone: '橡果森林區', shortZone: '橡果林', monster: '頑皮松鼠精', emoji: '🐿️' },
+  { id: 4,  x: 82, y: 63, zone: '陽光麥田原', shortZone: '麥田原', monster: '稻草小精靈', emoji: '🌾' },
+  { id: 5,  x: 59, y: 60, zone: '迷霧古橋頭', shortZone: '古橋頭', monster: '石頭小傀儡', emoji: '🗿' },
+  { id: 6,  x: 35, y: 58, zone: '靜謐月光谷', shortZone: '月光谷', monster: '灰狼小隊長', emoji: '🐺' },
+  { id: 7,  x: 16, y: 45, zone: '蜘蛛絲秘境', shortZone: '蜘蛛谷', monster: '織網小蜘蛛', emoji: '🕷️' },
+  { id: 8,  x: 31, y: 29, zone: '白骨化石坡', shortZone: '化石坡', monster: '搞笑骷髏兵', emoji: '💀' },
+  { id: 9,  x: 54, y: 32, zone: '恐龍腳印谷', shortZone: '恐龍谷', monster: '暴躁小暴龍', emoji: '🦖' },
+  { id: 10, x: 78, y: 31, zone: '翡翠飛龍崖', shortZone: '飛龍崖', monster: '閃電小青龍', emoji: '🐉' }
+];
+
+export const BASE_PLOT_COORDS = [
+  { id: 0, x: 22, y: 34, label: '北區高地' },
+  { id: 1, x: 52, y: 26, label: '中央廣場' },
+  { id: 2, x: 80, y: 36, label: '東區花園' },
+  { id: 3, x: 20, y: 74, label: '西區草坪' },
+  { id: 4, x: 50, y: 72, label: '南區大道' },
+  { id: 5, x: 79, y: 75, label: '湖畔營地' }
 ];
 
 export const BASE_CATALOG = {

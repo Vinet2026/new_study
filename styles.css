@@ -235,3 +235,28 @@ input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #cbd
 .diag-item { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .diag-item.pass { background: #f0fdf4; border-color: #86efac; }
 .diag-item.fail { background: #fef2f2; border-color: #fca5a5; }
+
+/* 基地內互動小地圖 */
+.base-map-wrap {
+  position: relative; width: 100%; aspect-ratio: 16 / 10; min-height: 290px;
+  border-radius: 22px; overflow: hidden; border: 3px solid #10b981;
+  box-shadow: inset 0 0 24px rgba(15, 23, 42, 0.15); margin-top: 12px;
+}
+.base-map-wrap.astro-theme { border-color: #6366f1; }
+.base-plot-node {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 82px; height: 82px; border-radius: 18px;
+  border: 2px dashed rgba(100, 116, 139, 0.75); background: rgba(255, 255, 255, 0.85);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; z-index: 5; padding: 2px;
+}
+.base-plot-node:hover { transform: translate(-50%, -50%) scale(1.08); }
+.base-plot-node.lv1 { border-style: solid; border-color: #94a3b8; background: rgba(241, 245, 249, 0.95); }
+.base-plot-node.lv2 { border-style: solid; border-color: #3b82f6; background: rgba(239, 246, 255, 0.96); }
+.base-plot-node.lv3 { border-style: solid; border-color: #f59e0b; background: rgba(255, 251, 235, 0.98); box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45); }
+.base-plot-node .bldg-svg { width: 52px; height: 52px; }
+.base-plot-tag {
+  font-size: 0.65rem; font-weight: 800; background: #1e293b; color: #fff;
+  padding: 1px 6px; border-radius: 999px; white-space: nowrap; margin-top: -2px;
+}
+.base-plot-node.lv3 .base-plot-tag { background: #d97706; }

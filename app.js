@@ -1,6 +1,6 @@
 import { renderZhuyinHTML, escapeHTML } from './zhuyin-dict.js';
 import { GRADE_LEVELS, SUBJECTS_BY_PROFILE, BUILTIN_QUESTIONS, STICKERS } from './questions.js';
-import { MATERIAL_INFO, ISLAND_NODES, BASE_CATALOG, getKingdomTitle, renderBuildingSVG } from './map-data.js';
+import { MATERIAL_INFO, ISLAND_NODES, BASE_PLOT_COORDS, BASE_CATALOG, getKingdomTitle, renderBuildingSVG } from './map-data.js';
 import { loadAppState, saveAppState, VoiceDB, TransferCode } from './storage.js';
 import { buildExpeditionDeck, updateMonsterRecord } from './mistake-pool.js';
 import { speakTTS, playFeedbackVoice } from './voice.js';
@@ -111,7 +111,7 @@ function renderIslandMap() {
     return `<button type="button" class="map-node ${isConquered ? 'conquered' : ''} ${isSelected ? 'selected' : ''}"
               style="left:${n.x}%; top:${n.y}%;" onclick="moveToNode(${n.id})">
       ${visual}
-      <span class="map-node-label">${n.id}.${towerLv > 0 ? `Lv.${towerLv}` : escapeHTML(n.zone.slice(0, 3))}</span>
+      <span class="map-node-label">${n.id}.${towerLv > 0 ? `Lv.${towerLv}` : escapeHTML(n.shortZone)}</span>
     </button>`;
   }).join('');
 
@@ -222,28 +222,75 @@ function upgradeMapTower(key) {
 /**
  * 自由設計基地（6 塊空地）
  */
+function getBaseBackgroundSVG(prof) {
+  if (prof === '6y') {
+    return `<svg viewBox="0 0 800 500" preserveAspectRatio="none" style="width:100%;height:100%;">
+      <rect width="800" height="500" fill="#1e1b4b"/>
+      <circle cx="90" cy="70" r="3" fill="#fef08a"/><circle cx="240" cy="45" r="2" fill="#fff"/>
+      <circle cx="620" cy="60" r="3" fill="#93c5fd"/><circle cx="720" cy="90" r="2.5" fill="#fef08a"/>
+      <ellipse cx="400" cy="360" rx="370" ry="220" fill="#312e81" stroke="#6366f1" stroke-width="6"/>
+      <polyline points="176,170 416,130 640,180 632,375 400,360 160,370 176,170"
+                fill="none" stroke="#38bdf8" stroke-width="5" stroke-dasharray="10 8" opacity="0.65"/>
+      <circle cx="400" cy="250" r="38" fill="#1e293b" stroke="#38bdf8" stroke-width="3" opacity="0.7"/>
+      <text x="400" y="255" text-anchor="middle" fill="#7dd3fc" font-size="14" font-weight="bold">星際核心</text>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 800 500" preserveAspectRatio="none" style="width:100%;height:100%;">
+    <rect width="800" height="500" fill="#bbf7d0"/>
+    <ellipse cx="400" cy="260" rx="355" ry="215" fill="#dcfce7" stroke="#4ade80" stroke-width="8"/>
+    <ellipse cx="640" cy="390" rx="75" ry="42" fill="#7dd3fc" stroke="#38bdf8" stroke-width="4" opacity="0.8"/>
+    <polyline points="176,170 416,130 640,180 632,375 400,360 160,370 176,170"
+              fill="none" stroke="#d97706" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+    <text x="80" y="95" font-size="28">🌲</text><text x="705" y="95" font-size="28">🌴</text>
+    <text x="65" y="455" font-size="26">🌿</text><text x="720" y="460" font-size="26">🌸</text>
+  </svg>`;
+}
+
 function renderBaseGrid() {
   const prof = state.activeProfile;
   const p = state.profiles[prof];
   const catalog = BASE_CATALOG[prof];
   const plots = p.basePlots || [null, null, null, null, null, null];
 
-  document.getElementById('base-grid').innerHTML = plots.map((plot, idx) => {
+  const wrap = document.getElementById('base-map-wrap');
+  wrap.classList.toggle('astro-theme', prof === '6y');
+  document.getElementById('base-map-title').textContent =
+    prof === '4y' ? '🏗️ 小恐龍的恐龍樂園小地圖' : '🏗️ 太空人的星際基地小地圖';
+  document.getElementById('base-bg-svg-holder').innerHTML = getBaseBackgroundSVG(prof);
+
+  document.getElementById('base-nodes-layer').innerHTML = BASE_PLOT_COORDS.map((coord, idx) => {
+    const plot = plots[idx];
     if (!plot) {
-      return `<div class="base-plot" onclick="openBasePlotModal(${idx})">
+      return `<button type="button" class="base-plot-node" style="left:${coord.x}%; top:${coord.y}%;" onclick="walkToBasePlot(${idx})">
         ${renderBuildingSVG(prof, 'empty', 0)}
-        <div style="font-weight:800; margin-top:6px;">＋ 自由建造空地 #${idx + 1}</div>
-        <div class="muted" style="font-size:0.78rem;">點我挑選喜歡的建築</div>
-      </div>`;
+        <span class="base-plot-tag">＋ ${coord.label}</span>
+      </button>`;
     }
     const item = catalog.find(c => c.type === plot.type) || catalog[0];
-    const lvText = plot.level === 1 ? 'Lv.1 簡陋初建' : (plot.level === 2 ? 'Lv.2 精緻升級' : 'Lv.3 華麗傳奇');
-    return `<div class="base-plot lv${plot.level}" onclick="openBasePlotModal(${idx})">
+    return `<button type="button" class="base-plot-node lv${plot.level}" style="left:${coord.x}%; top:${coord.y}%;" onclick="walkToBasePlot(${idx})">
       ${renderBuildingSVG(prof, plot.type, plot.level)}
-      <div style="font-weight:900; margin-top:4px;">${escapeHTML(item.name)}</div>
-      <span class="pill" style="font-size:0.75rem; margin-top:4px;">${lvText}</span>
-    </div>`;
+      <span class="base-plot-tag">${escapeHTML(item.name)} Lv.${plot.level}</span>
+    </button>`;
   }).join('');
+
+  const avatar = document.getElementById('base-avatar');
+  avatar.textContent = prof === '4y' ? '🦖' : '🚀';
+}
+
+function walkToBasePlot(plotIdx) {
+  const coord = BASE_PLOT_COORDS[plotIdx];
+  const avatar = document.getElementById('base-avatar');
+  if (coord && avatar) {
+    avatar.classList.add('hopping');
+    avatar.style.left = `${coord.x}%`;
+    avatar.style.top = `${coord.y}%`;
+    setTimeout(() => {
+      avatar.classList.remove('hopping');
+      openBasePlotModal(plotIdx);
+    }, 340);
+  } else {
+    openBasePlotModal(plotIdx);
+  }
 }
 
 function openBasePlotModal(plotIdx) {
@@ -755,7 +802,79 @@ function openDiagModal() {
   document.getElementById('diag-modal').classList.add('open');
 }
 
+
+// 隱藏測試觸發：3 秒內連續點擊左上角 Logo 7 次開啟
+let brandTapCount = 0;
+let brandTapResetTimer = null;
+
+function handleBrandTap() {
+  brandTapCount += 1;
+  clearTimeout(brandTapResetTimer);
+  if (brandTapCount >= 7) {
+    brandTapCount = 0;
+    document.getElementById('cheat-modal').classList.add('open');
+    showToast('🧪 已開啟隱藏測試工具箱！');
+    return;
+  }
+  brandTapResetTimer = setTimeout(() => { brandTapCount = 0; }, 2500);
+  goHome();
+}
+
+function cheatAddResources() {
+  const p = state.profiles[state.activeProfile];
+  p.materials += 999;
+  p.starsEasy += 99;
+  p.starsHard += 99;
+  commitState();
+  showToast('💎 已加入無限資源（建材 +999、星星 +99）！');
+}
+
+function cheatUnlockAllStages() {
+  const prof = state.activeProfile;
+  const p = state.profiles[prof];
+  for (const s of SUBJECTS_BY_PROFILE[prof]) {
+    for (const n of ISLAND_NODES) {
+      p.conqueredNodes[`${s.id}_${n.id}`] = true;
+    }
+  }
+  p.unlockedStickers = STICKERS.map(s => s.id);
+  commitState();
+  showToast('🚩 已一鍵全通關並解鎖全部貼紙！');
+}
+
+function cheatMaxAllBuildings() {
+  const prof = state.activeProfile;
+  const p = state.profiles[prof];
+  const subj = state.activeSubject[prof];
+  for (const n of ISLAND_NODES) {
+    const key = `${subj}_${n.id}`;
+    p.conqueredNodes[key] = true;
+    p.nodeTowers[key] = 3;
+  }
+  const catalog = BASE_CATALOG[prof];
+  p.basePlots = BASE_PLOT_COORDS.map((_, idx) => ({
+    type: catalog[idx % catalog.length].type,
+    level: 3
+  }));
+  commitState();
+  showToast('🏰 全島與基地建築皆已升級至 Lv.3 傳奇外觀！');
+}
+
+function cheatResetProfile() {
+  const prof = state.activeProfile;
+  state.profiles[prof] = {
+    starsEasy: 0, starsHard: 0, materials: 4, unlockedStickers: ['s1'],
+    currentNode: 1, conqueredNodes: {}, nodeTowers: {},
+    basePlots: [null, null, null, null, null, null]
+  };
+  state.wrongPool[prof] = {};
+  closeModal('cheat-modal');
+  commitState();
+  showToast('🔄 已重置目前帳號進度！');
+}
+
 Object.assign(window, {
+  handleBrandTap, walkToBasePlot, cheatAddResources, cheatUnlockAllStages, cheatMaxAllBuildings, cheatResetProfile,
   selectProfile, switchHomeTab, selectSubject, selectGrade, setDifficulty,
   moveToNode, startNodeBattle, upgradeMapTower, openBasePlotModal, buildOnBasePlot,
   upgradeBasePlot, clearBasePlot, goHome, abortQuiz, startDailyExpedition, startCoopBoss,

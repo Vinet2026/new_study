@@ -22,7 +22,7 @@
 <div id="boot-error-banner" class="boot-error-banner"></div>
 
 <header>
-  <div class="brand" onclick="goHome()">
+  <div class="brand" onclick="handleBrandTap()">
     <span>🏰</span>
     <span>雙寶學習王國</span>
   </div>
@@ -114,17 +114,21 @@
       </div>
     </div>
 
-    <!-- 分頁 B：我的專屬基地（6 塊空地自由設計建造與升級） -->
+    <!-- 分頁 B：我的專屬基地（基地內互動小地圖＋自由設計建造） -->
     <div id="panel-base" class="hidden">
       <div class="card">
         <div class="row" style="justify-content:space-between;">
           <div>
-            <h2 style="margin:0 0 4px;">🏗️ 我的專屬王國基地</h2>
-            <div class="muted">點擊任一塊空地自由挑選建築！建築升等後外觀會變得越來越精細華麗喔！</div>
+            <h2 style="margin:0 0 4px;" id="base-map-title">🏗️ 我的專屬基地小地圖</h2>
+            <div class="muted">點擊基地裡的任一塊空地或建築，角色就會走過去建造或升級華麗外觀！</div>
           </div>
           <span class="pill" id="base-material-pill">🪵 可用材料：4</span>
         </div>
-        <div class="base-grid" id="base-grid"></div>
+        <div class="base-map-wrap" id="base-map-wrap">
+          <div id="base-bg-svg-holder" class="island-bg-svg"></div>
+          <div class="island-nodes-layer" id="base-nodes-layer"></div>
+          <div class="map-avatar" id="base-avatar" style="left:50%; top:50%;">🦖</div>
+        </div>
       </div>
     </div>
   </section>
@@ -326,6 +330,24 @@
   <h2>眼睛休息時間到囉！</h2>
   <p style="color:#cbd5e1;">看遠方綠樹休息 10 分鐘，等等再繼續冒險！</p>
   <button class="btn btn-ghost" onclick="closeEyecareLockToParent()">🛠️ 家長解鎖</button>
+</div>
+
+
+<!-- 隱藏測試工具箱 Modal（連點左上角 Logo 7 次開啟） -->
+<div class="modal-backdrop" id="cheat-modal">
+  <div class="modal-panel" style="max-width:440px;">
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0;">🧪 隱藏測試工具箱</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('cheat-modal')">✕ 關閉</button>
+    </div>
+    <p class="muted" style="margin-top:0;">此面板供開發與家長快速測試滿等外觀、全通關與稱號晉升（針對目前選中的帳號生效）：</p>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button type="button" class="btn btn-primary" onclick="cheatAddResources()">💎 無限資源（建材 +999、星星 +99）</button>
+      <button type="button" class="btn btn-accent" onclick="cheatUnlockAllStages()">🚩 一鍵全通關（解鎖全部領土＋全貼紙）</button>
+      <button type="button" class="btn btn-warning" onclick="cheatMaxAllBuildings()">🏰 一鍵全建築滿等 Lv.3（黃金傳奇王國）</button>
+      <button type="button" class="btn btn-danger" onclick="cheatResetProfile()">🔄 重置目前帳號進度</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>

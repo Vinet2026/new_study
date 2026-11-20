@@ -1,7 +1,15 @@
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-export function buildExpeditionDeck(allQuestions, wrongPoolByProfile, category = 'all', count = 6) {
-  const filtered = category === 'all' ? allQuestions : allQuestions.filter(q => q.category === category);
+export function buildExpeditionDeck(allQuestions, wrongPoolByProfile, category = 'all', grade = 'ALL', count = 6) {
+  let filtered = allQuestions;
+  if (category !== 'all') {
+    const byCat = filtered.filter(q => q.category === category);
+    if (byCat.length) filtered = byCat;
+  }
+  if (grade && grade !== 'ALL') {
+    const byGrade = filtered.filter(q => !q.grade || q.grade === grade);
+    if (byGrade.length) filtered = byGrade;
+  }
   const source = filtered.length ? filtered : allQuestions;
   const now = Date.now();
 

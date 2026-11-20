@@ -1,12 +1,13 @@
-const STATE_KEY = 'childGame_v2_state';
+const STATE_KEY = 'childGame_v3_state';
 
 export function createDefaultState() {
   return {
     activeProfile: '4y',
+    selectedGrade: { '4y': 'ALL', '6y': 'ALL' },
     prefs: { listenFirst: false, debounce: true, voiceRate: 1.0 },
     profiles: {
-      '4y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'] },
-      '6y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'] }
+      '4y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'], conquered: {} },
+      '6y': { starsEasy: 0, starsHard: 0, unlockedStickers: ['s1'], conquered: {} }
     },
     wrongPool: { '4y': {}, '6y': {} },
     customQuestions: [],
@@ -20,7 +21,16 @@ export function loadAppState() {
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
     const def = createDefaultState();
-    return { ...def, ...parsed, prefs: { ...def.prefs, ...(parsed.prefs || {}) } };
+    return {
+      ...def,
+      ...parsed,
+      selectedGrade: { ...def.selectedGrade, ...(parsed.selectedGrade || {}) },
+      prefs: { ...def.prefs, ...(parsed.prefs || {}) },
+      profiles: {
+        '4y': { ...def.profiles['4y'], ...(parsed.profiles?.['4y'] || {}) },
+        '6y': { ...def.profiles['6y'], ...(parsed.profiles?.['6y'] || {}) }
+      }
+    };
   } catch {
     return createDefaultState();
   }
@@ -85,7 +95,7 @@ export const TransferCode = {
   },
   async decode(code) {
     const trimmed = (code || '').trim();
-    if (!trimmed.startsWith('V2_')) throw new Error('引繼碼需以 V2_ 開頭');
+    if (!trimmed.startsWith('V2_')) throw new Error('轉移碼格式不正確');
     const bin = atob(trimmed.slice(3));
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);

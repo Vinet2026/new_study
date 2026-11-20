@@ -1,14 +1,16 @@
 import { renderZhuyinHTML, escapeHTML } from './zhuyin-dict.js';
-import { BUILTIN_QUESTIONS, TERRITORIES, STICKERS } from './questions.js';
+import { GRADE_LEVELS, TERRITORIES_BY_PROFILE, BUILTIN_QUESTIONS, STICKERS } from './questions.js';
 import { loadAppState, saveAppState, VoiceDB, TransferCode } from './storage.js';
 import { buildExpeditionDeck, updateMonsterRecord } from './mistake-pool.js';
 import { speakTTS, playFeedbackVoice } from './voice.js';
+import { runBootSelfCheck } from './self-check.js';
 
 const voiceDB = new VoiceDB();
 let state = loadAppState();
 let softLandingPending = false;
 let currentMathAnswer = null;
 let pendingParentAction = null;
+let lastHealthReport = null;
 
 let session = null;
 let optionLocked = false;
@@ -25,7 +27,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => el.classList.remove('show'), 2400);
+  showToast._t = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
 function renderHeaderAndHome() {
@@ -45,23 +47,69 @@ function renderHeaderAndHome() {
 
   const prof = state.activeProfile;
   const label = prof === '4y' ? '🦖 小恐龍號（幼兒園）' : '🚀 太空人號（國小 108 課綱）';
-  document.getElementById('territory-title').textContent = `🗺️ ${label} — 選擇領土出征`;
+  document.getElementById('territory-title').textContent = `🗺️ ${label} — 學習王國領土地圖`;
 
   const pool = state.wrongPool[prof] || {};
   const dueCount = Object.values(pool).filter(m => m.nextReviewAt <= Date.now()).length;
   document.getElementById('monster-pool-summary').textContent =
-    `錯題怪獸池：目前 ${Object.keys(pool).length} 隻（其中 ${dueCount} 隻已可再次挑戰）`;
+    `待收服小怪獸：目前 ${Object.keys(pool).length} 隻（其中 ${dueCount} 隻可再次挑戰）`;
 
-  document.getElementById('territory-list').innerHTML = TERRITORIES.map(t => `
-    <button class="territory-btn" onclick="startTerritory('${t.id}')">
-      <div style="font-weight:800; font-size:1.05rem;">${escapeHTML(t.name)}</div>
-      <div class="muted" style="margin-top:4px;">${escapeHTML(t.desc)}</div>
+  // 1. 渲染分年級按鈕
+  const grades = GRADE_LEVELS[prof] || [];
+  const currentGrade = state.selectedGrade?.[prof] || 'ALL';
+  const allGrades = [{ id: 'ALL', label: '✨ 全部年級' }, ...grades];
+  document.getElementById('grade-selector-pills').innerHTML = allGrades.map(g => `
+    <button type="button" class="grade-pill ${currentGrade === g.id ? 'active' : ''}" onclick="selectGrade('${g.id}')">
+      ${escapeHTML(g.label)}
     </button>
   `).join('');
+
+  // 2. 渲染彩色王國領土地圖
+  const territories = TERRITORIES_BY_PROFILE[prof] || [];
+  const conqueredMap = state.profiles[prof].conquered || {};
+  const allQ = getAllQuestionsForProfile(prof);
+
+  document.getElementById('kingdom-map-grid').innerHTML = territories.map(t => {
+    const qCount = allQ.filter(q =>
+      q.category === t.id && (currentGrade === 'ALL' || !q.grade || q.grade === currentGrade)
+    ).length;
+    const isConquered = !!conqueredMap[t.id];
+    return `
+      <div class="territory-card" style="background:${t.color}; border-color:${t.border};" onclick="startTerritory('${t.id}')">
+        <span class="territory-flag">${isConquered ? '🚩 已插旗' : `📚 ${qCount} 題`}</span>
+        <div style="font-size:2rem; margin-bottom:6px;">${t.icon}</div>
+        <div style="font-weight:800; font-size:1.08rem;">${escapeHTML(t.name)}</div>
+        <div class="muted" style="margin-top:4px; font-size:0.84rem;">${escapeHTML(t.desc)}</div>
+      </div>
+    `;
+  }).join('');
+
+  // 每次渲染完執行自動健康檢查
+  lastHealthReport = runBootSelfCheck(state);
+  const hs = document.getElementById('parent-health-summary');
+  if (hs && lastHealthReport) hs.textContent = lastHealthReport.ok ? `✅ 檢測正常（${lastHealthReport.passCount} 項通過）` : `⚠️ 發現 ${lastHealthReport.failCount} 項異常`;
+}
+
+function openDiagModal() {
+  if (!lastHealthReport) lastHealthReport = runBootSelfCheck(state);
+  const hs = document.getElementById('parent-health-summary');
+  if (hs && lastHealthReport) hs.textContent = lastHealthReport.ok ? `✅ 檢測正常（${lastHealthReport.passCount} 項通過）` : `⚠️ 發現 ${lastHealthReport.failCount} 項異常`;
+  if (lastHealthReport.ok) {
+    const s = lastHealthReport.stats;
+    showToast(`✅ 自檢通過：年級按鈕 ${s.gradeButtonsRendered} 個、王國領土 ${s.mapTerritoriesRendered} 區正常顯示`);
+  } else {
+    alert('⚠️ 頁面自檢發現以下問題：\n' + lastHealthReport.issues.join('\n'));
+  }
 }
 
 function selectProfile(prof) {
   state.activeProfile = prof;
+  commitState();
+}
+
+function selectGrade(gradeId) {
+  const prof = state.activeProfile;
+  state.selectedGrade[prof] = gradeId;
   commitState();
 }
 
@@ -91,21 +139,25 @@ function getAllQuestionsForProfile(prof) {
 
 function startDailyExpedition(prof) {
   state.activeProfile = prof;
-  const deck = buildExpeditionDeck(getAllQuestionsForProfile(prof), state.wrongPool[prof], 'all', 6);
-  session = { mode: 'daily', profile: prof, deck, index: 0, combo: 0, earnedEasy: 0, earnedHard: 0 };
+  const grade = state.selectedGrade?.[prof] || 'ALL';
+  const deck = buildExpeditionDeck(getAllQuestionsForProfile(prof), state.wrongPool[prof], 'all', grade, 6);
+  session = { mode: 'daily', categoryId: 'all', profile: prof, deck, index: 0, combo: 0, earnedEasy: 0, earnedHard: 0 };
   enterQuizView();
 }
 
 function startTerritory(catId) {
   const prof = state.activeProfile;
-  const deck = buildExpeditionDeck(getAllQuestionsForProfile(prof), state.wrongPool[prof], catId, 5);
-  session = { mode: 'territory', profile: prof, deck, index: 0, combo: 0, earnedEasy: 0, earnedHard: 0 };
+  const grade = state.selectedGrade?.[prof] || 'ALL';
+  const deck = buildExpeditionDeck(getAllQuestionsForProfile(prof), state.wrongPool[prof], catId, grade, 5);
+  session = { mode: 'territory', categoryId: catId, profile: prof, deck, index: 0, combo: 0, earnedEasy: 0, earnedHard: 0 };
   enterQuizView();
 }
 
 function startCoopBoss() {
-  const deck4 = buildExpeditionDeck(getAllQuestionsForProfile('4y'), state.wrongPool['4y'], 'all', 6).map(q => ({ ...q, turnOwner: '4y' }));
-  const deck6 = buildExpeditionDeck(getAllQuestionsForProfile('6y'), state.wrongPool['6y'], 'all', 6).map(q => ({ ...q, turnOwner: '6y' }));
+  const g4 = state.selectedGrade?.['4y'] || 'ALL';
+  const g6 = state.selectedGrade?.['6y'] || 'ALL';
+  const deck4 = buildExpeditionDeck(getAllQuestionsForProfile('4y'), state.wrongPool['4y'], 'all', g4, 6).map(q => ({ ...q, turnOwner: '4y' }));
+  const deck6 = buildExpeditionDeck(getAllQuestionsForProfile('6y'), state.wrongPool['6y'], 'all', g6, 6).map(q => ({ ...q, turnOwner: '6y' }));
   const interleaved = [];
   for (let i = 0; i < 6; i++) {
     if (deck4[i]) interleaved.push(deck4[i]);
@@ -132,8 +184,9 @@ function renderQuestion() {
   box.classList.remove('turn-dino', 'turn-astro');
   box.classList.add(currentTurn === '4y' ? 'turn-dino' : 'turn-astro');
 
+  const gradeTag = q.grade ? ` [${q.grade}]` : '';
   document.getElementById('quiz-mode-pill').textContent =
-    isBoss ? '⚔️ 雙寶協力打 Boss' : (session.mode === 'daily' ? '⚡ 今日一鍵出征' : '🗺️ 領土闖關');
+    (isBoss ? '⚔️ 雙寶協力打 Boss' : (session.mode === 'daily' ? '⚡ 今日一鍵出征' : '🗺️ 領土攻佔')) + gradeTag;
   document.getElementById('quiz-monster-badge').classList.toggle('hidden', !q.isReviewMonster);
   document.getElementById('quiz-progress-pill').textContent =
     isBoss ? `回合 ${session.index + 1}` : `第 ${session.index + 1} / ${session.deck.length} 題`;
@@ -142,7 +195,7 @@ function renderQuestion() {
   bossHud.classList.toggle('hidden', !isBoss);
   if (isBoss) {
     document.getElementById('boss-hp-fill').style.width = `${Math.max(0, (session.bossHp / session.bossMaxHp) * 100)}%`;
-    document.getElementById('boss-name-hp').textContent = `🐉 蛀牙巨龍 HP：${session.bossHp} / ${session.bossMaxHp}`;
+    document.getElementById('boss-name-hp').textContent = `🐉 蛀牙巨龍體力：${session.bossHp} / ${session.bossMaxHp}`;
     document.getElementById('boss-turn-label').textContent =
       currentTurn === '4y' ? '目前回合：🦖 小恐龍（左）' : '目前回合：🚀 太空人（右）';
     const freezeEl = document.getElementById('boss-freeze-alert');
@@ -272,7 +325,7 @@ function handleAnswer(selectedIdx, btnEl, q, turnProfile) {
     session.combo = 0;
     commitState();
     feedbackEl.style.color = '#dc2626';
-    feedbackEl.textContent = '👾 小怪獸逃跑了，放進錯題怪獸池下次再抓！';
+    feedbackEl.textContent = '👾 小怪獸逃跑了，下次出征再把牠抓回來！';
     playFeedbackVoice(voiceDB, 'wrong', '沒關係，差一點點，再聽一次看看喔！', state.prefs.voiceRate);
   }
 
@@ -298,7 +351,13 @@ function unlockProgressStickers(prof) {
 }
 
 function finishStandardSession() {
-  playFeedbackVoice(voiceDB, 'victory', '太強了吧！全部過關，送你新星星！', state.prefs.voiceRate);
+  if (session.mode === 'territory' && session.categoryId) {
+    const p = state.profiles[session.profile];
+    p.conquered = p.conquered || {};
+    p.conquered[session.categoryId] = true;
+    commitState();
+  }
+  playFeedbackVoice(voiceDB, 'victory', '太強了吧！全部過關，插上勝利旗幟！', state.prefs.voiceRate);
   showToast(`🏆 過關！獲得 🌱${session.earnedEasy} 簡單星、🔥${session.earnedHard} 困難星`);
   goHome();
   checkSoftLandingLock();
@@ -437,7 +496,7 @@ async function startRecording(key) {
     activeRecorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
       await voiceDB.save(key, new Blob(recordChunks, { type: activeRecorder.mimeType || 'audio/webm' }));
-      showToast('🎙️ 真人語音已存入 IndexedDB！');
+      showToast('🎙️ 真人語音已儲存完成！');
       renderRecorderList();
     };
     activeRecorder.start();
@@ -490,7 +549,20 @@ function closeEyecareLockToParent() {
   });
 }
 
+function updateCustomCategoryOptions() {
+  const prof = document.getElementById('custom-profile').value;
+  const grades = GRADE_LEVELS[prof] || [];
+  document.getElementById('custom-grade').innerHTML = grades.map(g =>
+    `<option value="${g.id}">${escapeHTML(g.label)}</option>`
+  ).join('');
+  const territories = TERRITORIES_BY_PROFILE[prof] || [];
+  document.getElementById('custom-category').innerHTML = territories.map(t =>
+    `<option value="${t.id}">${t.icon} ${escapeHTML(t.name)}</option>`
+  ).join('');
+}
+
 function openParentAdminModal() {
+  updateCustomCategoryOptions();
   updateCustomPreview();
   refreshCustomCountLabel();
   document.getElementById('parent-admin-modal').classList.add('open');
@@ -556,6 +628,7 @@ function refreshCustomCountLabel() {
 
 function addCustomQuestion() {
   const profile = document.getElementById('custom-profile').value;
+  const grade = document.getElementById('custom-grade').value;
   const category = document.getElementById('custom-category').value;
   const q = document.getElementById('custom-q-text').value.trim();
   const opts = [0, 1, 2].map(i => document.getElementById(`custom-opt-${i}`).value.trim());
@@ -566,7 +639,7 @@ function addCustomQuestion() {
   }
   state.customQuestions.push({
     id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-    profile, category, q, options: opts, answer
+    profile, grade, category, q, options: opts, answer
   });
   commitState();
   refreshCustomCountLabel();
@@ -586,6 +659,7 @@ function importCustomJSON() {
         state.customQuestions.push({
           id: item.id || `json_${Date.now()}_${idx}`,
           profile: item.profile === '6y' ? '6y' : '4y',
+          grade: item.grade || '',
           category: item.category || 'custom',
           q: String(item.q),
           options: item.options.map(String),
@@ -598,13 +672,13 @@ function importCustomJSON() {
     refreshCustomCountLabel();
     showToast(`📥 成功匯入 ${added} 題自訂題目！`);
   } catch (err) {
-    showToast('JSON 格式有誤：' + err.message);
+    showToast('題庫格式不正確，請確認內容後再試一次');
   }
 }
 
 function exportCustomJSON() {
   document.getElementById('json-bank-io').value = JSON.stringify(state.customQuestions, null, 2);
-  showToast('📤 已匯出目前自訂題庫 JSON');
+  showToast('📤 已產生題庫備份資料');
 }
 
 async function generateTransferCode() {
@@ -616,9 +690,9 @@ async function generateTransferCode() {
       prefs: state.prefs
     });
     document.getElementById('transfer-code-box').value = code;
-    showToast(`🔐 已產生壓縮引繼碼（${code.length} 字元）`);
+    showToast(`🔐 已產生進度轉移碼，請全選複製！`);
   } catch (err) {
-    showToast('產生失敗：' + err.message);
+    showToast('產生轉移碼失敗，請稍後再試');
   }
 }
 
@@ -631,20 +705,123 @@ async function applyTransferCode() {
     state.prefs = { ...state.prefs, ...(decoded.prefs || {}) };
     commitState();
     refreshCustomCountLabel();
-    showToast('📲 已套用跨裝置引繼碼！');
+    showToast('📲 已成功還原學習進度！');
   } catch (err) {
-    showToast('套用失敗：' + err.message);
+    showToast('還原失敗，請確認轉移碼是否完整複製');
   }
 }
 
+
+let currentDiagReport = null;
+let currentDiagFilter = 'all';
+
+function openDiagModal() {
+  document.getElementById('diag-modal').classList.add('open');
+  runFullVisualDiagnosis();
+}
+
+function runFullVisualDiagnosis() {
+  currentDiagReport = runLivePageDiagnostics(state);
+  renderDiagModal();
+}
+
+function filterDiagItems(mode) {
+  currentDiagFilter = mode;
+  renderDiagModal();
+}
+
+function highlightDiagElement(el) {
+  if (!el) {
+    showToast('此項目為系統級檢查，無特定畫面元件');
+    return;
+  }
+  closeModal('diag-modal');
+  closeModal('parent-admin-modal');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('diag-highlight');
+  void el.offsetWidth;
+  el.classList.add('diag-highlight');
+  setTimeout(() => el.classList.remove('diag-highlight'), 3600);
+}
+
+function triggerDiagAction(idx) {
+  const item = currentDiagReport?.checks?.[idx];
+  if (item && typeof item.actionFn === 'function') {
+    item.actionFn();
+    showToast('已執行檢測動作');
+  }
+}
+
+function renderDiagModal() {
+  if (!currentDiagReport) return;
+  const r = currentDiagReport;
+
+  document.getElementById('diag-summary-grid').innerHTML = `
+    <div class="diag-stat-box">
+      <div class="muted">通過項目</div>
+      <div class="diag-stat-num" style="color:#16a34a;">${r.passCount}</div>
+    </div>
+    <div class="diag-stat-box">
+      <div class="muted">異常項目</div>
+      <div class="diag-stat-num" style="color:${r.failCount ? '#dc2626' : '#16a34a'};">${r.failCount}</div>
+    </div>
+    <div class="diag-stat-box">
+      <div class="muted">可見按鈕數</div>
+      <div class="diag-stat-num">${r.visibleBtnCount}</div>
+    </div>
+    <div class="diag-stat-box">
+      <div class="muted">領土圖形數</div>
+      <div class="diag-stat-num">${r.mapCardCount}</div>
+    </div>
+  `;
+
+  const filtered = r.checks.filter(c => {
+    if (currentDiagFilter === 'all') return true;
+    if (currentDiagFilter === 'fail') return c.status === 'fail' || c.status === 'warn';
+    return c.group === currentDiagFilter;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('diag-list').innerHTML =
+      '<div class="diag-item pass"><strong>🎉 目前篩選條件下沒有任何問題！</strong></div>';
+    return;
+  }
+
+  document.getElementById('diag-list').innerHTML = filtered.map(c => {
+    const globalIdx = r.checks.indexOf(c);
+    const icon = c.status === 'pass' ? '✅' : (c.status === 'warn' ? '⚠️' : '❌');
+    const locateBtn = c.targetEl
+      ? `<button type="button" class="btn btn-ghost btn-sm" onclick="highlightDiagByIndex(${globalIdx})">🎯 定位閃爍</button>`
+      : '';
+    const actBtn = typeof c.actionFn === 'function'
+      ? `<button type="button" class="btn btn-accent btn-sm" onclick="triggerDiagAction(${globalIdx})">▶ 測試此項</button>`
+      : '';
+    return `
+      <div class="diag-item ${c.status}">
+        <div style="flex:1; min-width:220px;">
+          <div style="font-weight:800;">${icon} ${escapeHTML(c.title)}</div>
+          <div class="muted" style="margin-top:2px;">${escapeHTML(c.detail)}</div>
+        </div>
+        <div class="diag-btn-group">${locateBtn}${actBtn}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function highlightDiagByIndex(idx) {
+  const item = currentDiagReport?.checks?.[idx];
+  if (item) highlightDiagElement(item.targetEl);
+}
+
 Object.assign(window, {
-  selectProfile, togglePref, goHome, abortQuiz, startDailyExpedition, startTerritory,
+  openDiagModal, runFullVisualDiagnosis, filterDiagItems, triggerDiagAction, highlightDiagByIndex,
+  selectProfile, selectGrade, togglePref, goHome, abortQuiz, startDailyExpedition, startTerritory,
   startCoopBoss, replayCurrentQuestion, setPalm, openStickerModal, renderStickerModal,
   openTheaterById, closeTheater, openVoiceModal, saveVoiceRate, testTTS,
   startRecording, stopRecording, previewVoice, deleteVoice, openParentLockModal,
   verifyMathChallenge, closeEyecareLockToParent, closeModal, startEyecareTimer,
-  stopEyecareTimer, updateCustomPreview, addCustomQuestion, importCustomJSON,
-  exportCustomJSON, generateTransferCode, applyTransferCode
+  stopEyecareTimer, updateCustomCategoryOptions, updateCustomPreview, addCustomQuestion,
+  importCustomJSON, exportCustomJSON, generateTransferCode, applyTransferCode, openDiagModal
 });
 
 renderHeaderAndHome();

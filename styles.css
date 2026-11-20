@@ -93,12 +93,15 @@ header {
   border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: 999px;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
+
+.pill.health-ok { background: #dcfce7; border-color: #86efac; color: #166534; }
+.pill.health-warn { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
 
 .btn {
   border: none;
@@ -156,6 +159,69 @@ header {
 .profile-card.active.dino { background: #ecfdf5; border-color: var(--primary); }
 .profile-card.active.astro { background: #eff6ff; border-color: var(--accent); }
 
+/* 分年級選擇列 */
+.grade-bar {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.grade-pill {
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.grade-pill.active {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}
+
+/* 王國領土地圖卡片 */
+.territory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.territory-card {
+  text-align: left;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 18px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  position: relative;
+}
+.territory-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.15);
+}
+.territory-flag {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
 .boss-banner {
   background: linear-gradient(135deg, #312e81 0%, #701a75 100%);
   color: #fff;
@@ -169,24 +235,6 @@ header {
   box-shadow: var(--shadow);
   margin-bottom: 18px;
 }
-
-.territory-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.territory-btn {
-  text-align: left;
-  background: #fff;
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  padding: 14px;
-  cursor: pointer;
-  transition: transform 0.12s, border-color 0.15s;
-}
-.territory-btn:hover { transform: translateY(-2px); border-color: var(--primary); }
 
 .quiz-box {
   background: #fff;
@@ -427,3 +475,54 @@ footer {
   font-size: 0.85rem;
   padding: 16px;
 }
+
+/* 網頁端互動自檢面板 */
+.diag-btn-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.diag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.diag-item {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.diag-item.pass { border-color: #86efac; background: #f0fdf4; }
+.diag-item.fail { border-color: #fca5a5; background: #fef2f2; }
+.diag-item.warn { border-color: #fde047; background: #fffbeb; }
+.diag-highlight {
+  outline: 4px solid #ef4444 !important;
+  outline-offset: 3px;
+  animation: pulseOutline 1.2s ease-in-out 3;
+}
+@keyframes pulseOutline {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+  50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+.diag-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.diag-stat-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.diag-stat-num { font-size: 1.4rem; font-weight: 900; }

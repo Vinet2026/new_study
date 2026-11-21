@@ -154,10 +154,11 @@ export function renderBuildingArt(theme, type, level) {
     </svg>`;
   }
   const imgUrl = `./bldg-${theme}-${type}-lv${level}.png`;
-  return `<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
-    ${getDistinctBuildingSVG(theme, type, level)}
-    <img src="${imgUrl}" alt="" class="bldg-svg ${level >= 3 ? 'bldg-glow' : ''}"
-         style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;"
-         onerror="this.style.display='none'" />
+  const glowCls = level >= 3 ? ' bldg-glow' : '';
+  return `<div class="bldg-art-wrap">
+    <img src="${imgUrl}" alt="" class="bldg-img${glowCls}"
+         onload="if(this.nextElementSibling)this.nextElementSibling.style.display='none';"
+         onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='block';" />
+    <span class="bldg-fallback" style="display:none;">${getDistinctBuildingSVG(theme, type, level)}</span>
   </div>`;
 }

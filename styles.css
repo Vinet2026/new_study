@@ -272,3 +272,35 @@ input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #cbd
   font-size: 0.88rem;
   font-weight: 800;
 }
+
+/* 手繪去背建築圖檔排版優化 (v12) */
+.bldg-art-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+}
+.bldg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.map-node .bldg-art-wrap {
+  width: 42px;
+  height: 42px;
+}
+.base-plot-node {
+  width: 88px;
+  height: 88px;
+}
+.base-plot-node .bldg-art-wrap {
+  width: 64px;
+  height: 64px;
+}
+.modal-panel .bldg-art-wrap {
+  width: 72px;
+  height: 72px;
+}

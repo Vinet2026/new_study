@@ -65,6 +65,17 @@
       </div>
     </div>
 
+    <!-- 獨立學習階段／年級選擇區（原版風格，與科目分開不擁擠） -->
+    <div class="card grade-stage-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <div style="font-weight:900; font-size:0.98rem;">🎓 選擇學習階段等級：</div>
+        <span class="pill" style="background:#ecfdf5; border-color:#a7f3d0; color:#047857; font-size:0.78rem;">
+          ✨ 自動開啟台灣直式注音（ㄅㄆㄇ）輔助
+        </span>
+      </div>
+      <div class="grade-pills" id="grade-pills" style="margin-bottom:0;"></div>
+    </div>
+
     <!-- 主模式切換：冒險島嶼地圖 vs 我的專屬基地 -->
     <div class="mode-tabs">
       <button type="button" class="mode-tab-btn active" id="tab-btn-map" onclick="switchHomeTab('map')">🗺️ 冒險島嶼地圖</button>
@@ -74,10 +85,8 @@
     <!-- 分頁 A：冒險島嶼地圖 -->
     <div id="panel-map">
       <div class="card" style="padding:14px;">
-        <!-- 科目選擇 -->
+        <!-- 科目選擇（獨立區塊，不與年級擠在一起） -->
         <div class="subject-pills" id="subject-pills"></div>
-        <!-- 分年級選擇 -->
-        <div class="grade-pills" id="grade-pills"></div>
 
         <!-- SVG 島嶼大陸地圖（10 個可自由點擊節點＋移動角色） -->
         <div class="island-map-wrap" id="island-map-wrap">

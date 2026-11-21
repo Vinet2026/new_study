@@ -1,6 +1,6 @@
 import { renderZhuyinHTML, escapeHTML } from './zhuyin-dict.js';
 import { GRADE_LEVELS, SUBJECTS_BY_PROFILE, BUILTIN_QUESTIONS, STICKERS } from './questions.js';
-import { MATERIAL_INFO, ISLAND_NODES, BASE_PLOT_COORDS, BASE_CATALOG, getKingdomTitle, renderBuildingSVG } from './map-data.js';
+import { MATERIAL_INFO, ISLAND_NODES, BASE_PLOT_COORDS, BASE_CATALOG, getKingdomTitle, renderBaseSceneSVG, renderBuildingArt } from './map-data.js';
 import { loadAppState, saveAppState, VoiceDB, TransferCode } from './storage.js';
 import { buildExpeditionDeck, updateMonsterRecord } from './mistake-pool.js';
 import { speakTTS, playFeedbackVoice } from './voice.js';
@@ -105,7 +105,7 @@ function renderIslandMap() {
     const isSelected = curNodeId === n.id;
 
     const visual = towerLv > 0
-      ? renderBuildingSVG(prof, 'tower', towerLv).replace('class="bldg-svg', 'class="bldg-svg-sm')
+      ? renderBuildingArt(prof, 'tower', towerLv).replace('class="bldg-svg', 'class="bldg-svg-sm')
       : `<span style="font-size:1.45rem;">${n.emoji}</span>`;
 
     return `<button type="button" class="map-node ${isConquered ? 'conquered' : ''} ${isSelected ? 'selected' : ''}"
@@ -178,7 +178,7 @@ function renderSelectedNodeCard() {
     <div class="row" style="justify-content:space-between; margin-bottom:12px;">
       <div class="row">
         <div style="width:62px; height:62px; border-radius:16px; background:#f8fafc; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;">
-          ${towerLv > 0 ? renderBuildingSVG(prof, 'tower', towerLv) : `<span style="font-size:2.2rem;">${node.emoji}</span>`}
+          ${towerLv > 0 ? renderBuildingArt(prof, 'tower', towerLv) : `<span style="font-size:2.2rem;">${node.emoji}</span>`}
         </div>
         <div>
           <div class="muted">第 ${node.id} 區・${escapeHTML(node.zone)}</div>
@@ -222,29 +222,7 @@ function upgradeMapTower(key) {
 /**
  * 自由設計基地（6 塊空地）
  */
-function getBaseBackgroundSVG(prof) {
-  if (prof === '6y') {
-    return `<svg viewBox="0 0 800 500" preserveAspectRatio="none" style="width:100%;height:100%;">
-      <rect width="800" height="500" fill="#1e1b4b"/>
-      <circle cx="90" cy="70" r="3" fill="#fef08a"/><circle cx="240" cy="45" r="2" fill="#fff"/>
-      <circle cx="620" cy="60" r="3" fill="#93c5fd"/><circle cx="720" cy="90" r="2.5" fill="#fef08a"/>
-      <ellipse cx="400" cy="360" rx="370" ry="220" fill="#312e81" stroke="#6366f1" stroke-width="6"/>
-      <polyline points="176,170 416,130 640,180 632,375 400,360 160,370 176,170"
-                fill="none" stroke="#38bdf8" stroke-width="5" stroke-dasharray="10 8" opacity="0.65"/>
-      <circle cx="400" cy="250" r="38" fill="#1e293b" stroke="#38bdf8" stroke-width="3" opacity="0.7"/>
-      <text x="400" y="255" text-anchor="middle" fill="#7dd3fc" font-size="14" font-weight="bold">星際核心</text>
-    </svg>`;
-  }
-  return `<svg viewBox="0 0 800 500" preserveAspectRatio="none" style="width:100%;height:100%;">
-    <rect width="800" height="500" fill="#bbf7d0"/>
-    <ellipse cx="400" cy="260" rx="355" ry="215" fill="#dcfce7" stroke="#4ade80" stroke-width="8"/>
-    <ellipse cx="640" cy="390" rx="75" ry="42" fill="#7dd3fc" stroke="#38bdf8" stroke-width="4" opacity="0.8"/>
-    <polyline points="176,170 416,130 640,180 632,375 400,360 160,370 176,170"
-              fill="none" stroke="#d97706" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
-    <text x="80" y="95" font-size="28">🌲</text><text x="705" y="95" font-size="28">🌴</text>
-    <text x="65" y="455" font-size="26">🌿</text><text x="720" y="460" font-size="26">🌸</text>
-  </svg>`;
-}
+
 
 function renderBaseGrid() {
   const prof = state.activeProfile;
@@ -256,20 +234,20 @@ function renderBaseGrid() {
   wrap.classList.toggle('astro-theme', prof === '6y');
   document.getElementById('base-map-title').textContent =
     prof === '4y' ? '🏗️ 小恐龍的恐龍樂園小地圖' : '🏗️ 太空人的星際基地小地圖';
-  document.getElementById('base-bg-svg-holder').innerHTML = getBaseBackgroundSVG(prof);
+  document.getElementById('base-bg-svg-holder').innerHTML = renderBaseSceneSVG(prof);
 
   document.getElementById('base-nodes-layer').innerHTML = BASE_PLOT_COORDS.map((coord, idx) => {
     const plot = plots[idx];
     if (!plot) {
       return `<button type="button" class="base-plot-node" style="left:${coord.x}%; top:${coord.y}%;" onclick="walkToBasePlot(${idx})">
-        ${renderBuildingSVG(prof, 'empty', 0)}
+        ${renderBuildingArt(prof, 'empty', 0)}
         <span class="base-plot-tag">＋ ${coord.label}</span>
       </button>`;
     }
     const item = catalog.find(c => c.type === plot.type) || catalog[0];
     return `<button type="button" class="base-plot-node lv${plot.level}" style="left:${coord.x}%; top:${coord.y}%;" onclick="walkToBasePlot(${idx})">
-      ${renderBuildingSVG(prof, plot.type, plot.level)}
-      <span class="base-plot-tag">${escapeHTML(item.name)} Lv.${plot.level}</span>
+      ${renderBuildingArt(prof, plot.type, plot.level)}
+      <span class="base-plot-tag">${escapeHTML((item.lvNames && item.lvNames[plot.level - 1]) || item.name)} Lv.${plot.level}</span>
     </button>`;
   }).join('');
 
@@ -306,9 +284,9 @@ function openBasePlotModal(plotIdx) {
     body.innerHTML = catalog.map(c => `
       <div class="diag-item" style="background:#f8fafc;">
         <div class="row">
-          ${renderBuildingSVG(prof, c.type, 1)}
+          ${renderBuildingArt(prof, c.type, 1)}
           <div>
-            <strong>${escapeHTML(c.name)}</strong>
+            <strong>${escapeHTML(c.name)}（${escapeHTML((c.lvNames && c.lvNames[0]) || 'Lv.1')}）</strong>
             <div class="muted">${escapeHTML(c.desc)}</div>
           </div>
         </div>
@@ -326,13 +304,13 @@ function openBasePlotModal(plotIdx) {
       <div class="row" style="justify-content:center; gap:24px; margin:12px 0;">
         <div style="text-align:center;">
           <div class="muted">目前外觀 (Lv.${existing.level})</div>
-          ${renderBuildingSVG(prof, existing.type, existing.level)}
+          ${renderBuildingArt(prof, existing.type, existing.level)}
         </div>
         ${existing.level < 3 ? `
           <div style="font-size:1.5rem;">➔</div>
           <div style="text-align:center;">
             <div class="muted">升級後外觀 (Lv.${nextLv})</div>
-            ${renderBuildingSVG(prof, existing.type, nextLv)}
+            ${renderBuildingArt(prof, existing.type, nextLv)}
           </div>
         ` : ''}
       </div>
